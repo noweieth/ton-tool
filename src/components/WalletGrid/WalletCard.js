@@ -6,11 +6,20 @@ import { removeWallet, renameWallet } from '@/services/walletManager';
 
 export default function WalletCard({
   wallet, index, balance, tokenBalance, selectedToken,
-  onSwap, onTransfer, onWalletsChanged, pushLog,
+  onSwap, onTransfer, onRefreshWallet, onWalletsChanged, pushLog,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(wallet.name);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefreshWallet(index);
+    } catch (e) { console.error(e); }
+    setRefreshing(false);
+  };
 
   const handleCopyAddress = () => {
     copyToClipboard(wallet.address);
@@ -124,6 +133,9 @@ export default function WalletCard({
         <button className="btn btn-buy" onClick={() => onSwap(index, 'buy')}>Buy</button>
         <button className="btn btn-sell" onClick={() => onSwap(index, 'sell')}>Sell</button>
         <button className="btn" onClick={() => onTransfer(index)} title="Transfer"><i className="fa-solid fa-paper-plane" /></button>
+        <button className="btn" onClick={handleRefresh} title="Refresh balance" disabled={refreshing}>
+          <i className={`fa-solid fa-rotate${refreshing ? ' fa-spin' : ''}`} />
+        </button>
         <button className="btn" onClick={handleCopyAddress} title="Copy address"><i className="fa-regular fa-copy" /></button>
         <button className="btn" onClick={handleCopyPrivateKey} title="Copy private key"><i className="fa-solid fa-key" /></button>
         <button className="btn" onClick={() => {

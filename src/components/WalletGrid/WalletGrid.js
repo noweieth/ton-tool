@@ -4,7 +4,7 @@ import WalletCard from './WalletCard';
 
 export default function WalletGrid({
   wallets, allWallets, balances, tokenBalances, selectedToken,
-  viewMode, onSwap, onTransfer, onWalletsChanged, pushLog,
+  viewMode, onSwap, onTransfer, onRefreshWallet, onWalletsChanged, pushLog,
 }) {
   if (wallets.length === 0) {
     return (
@@ -36,6 +36,7 @@ export default function WalletGrid({
               selectedToken={selectedToken}
               onSwap={onSwap}
               onTransfer={onTransfer}
+              onRefreshWallet={onRefreshWallet}
               onWalletsChanged={onWalletsChanged}
               pushLog={pushLog}
             />

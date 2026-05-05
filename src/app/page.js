@@ -13,7 +13,7 @@ import ImportWalletModal from '@/components/Modals/ImportWalletModal';
 import SwapModal from '@/components/Modals/SwapModal';
 import TransferModal from '@/components/Modals/TransferModal';
 import { getWallets } from '@/utils/storage';
-import { getBatchBalances, getBatchJettonBalance } from '@/services/tonapi';
+import { getAccountBalance, getJettonBalances, getBatchBalances, getBatchJettonBalance } from '@/services/tonapi';
 import { getSelectedToken, setSelectedToken, getLogs, addLog, getSettings, setSettings } from '@/utils/storage';
 
 export default function Home() {
@@ -87,6 +87,22 @@ export default function Home() {
     setTransferTarget({ walletIndex });
     setModal('transfer');
   }, []);
+
+  const handleRefreshWallet = useCallback(async (walletIndex) => {
+    const w = wallets[walletIndex];
+    if (!w) return;
+    const addr = w.address;
+    const bal = await getAccountBalance(addr);
+    setBalances(prev => ({ ...prev, [addr]: bal }));
+    if (selectedToken) {
+      const jettons = await getJettonBalances(addr);
+      const found = jettons.find(j => j.address === selectedToken.address);
+      setTokenBalances(prev => ({
+        ...prev,
+        [addr]: { balance: found?.balance || '0', decimals: found?.decimals || 9 },
+      }));
+    }
+  }, [wallets, selectedToken]);
 
   // Filter wallets
   const filteredWallets = wallets.filter(w => {
@@ -217,6 +233,7 @@ export default function Home() {
           viewMode={viewMode}
           onSwap={handleSwap}
           onTransfer={handleTransfer}
+          onRefreshWallet={handleRefreshWallet}
           onWalletsChanged={handleWalletsChanged}
           pushLog={pushLog}
         />
