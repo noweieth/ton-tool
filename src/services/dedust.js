@@ -77,8 +77,8 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
 
 /**
  * Build swap Jetton → TON via DeDust
- * For jetton sells, user must send a jetton transfer to the vault
- * with forward_payload containing the swap info
+ * Flow: User sends jetton transfer to their own jetton wallet,
+ * with destination=jettonVault and forward_payload=swap params
  */
 export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalletAddress }) {
   return withRetry(async () => {
@@ -94,37 +94,44 @@ export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalle
 
     const jettonVault = client.open(await factory.getJettonVault(Address.parse(jettonAddress)));
 
-    // For jetton sell: build VaultJetton swap payload
-    // This is the forward_payload for the jetton transfer
-    const swapPayload = beginCell()
-      .storeUint(0xea06185d, 32)     // swap op
-      .storeAddress(pool.address)    // pool_address
-      .storeUint(0, 1)              // reserved
-      .storeCoins(0n)               // limit
-      .storeMaybeRef(null)          // next
-      .storeRef(buildSwapParamsRef()) // swap_params
-      .endCell();
+    // Use SDK's VaultJetton to build the swap forward_payload
+    const { VaultJetton } = await import('@dedust/sdk');
+    const swapPayload = VaultJetton.createSwapPayload({
+      poolAddress: pool.address,
+      limit: 0n,
+      swapParams: {},
+    });
 
-    // Build jetton transfer message (op = 0xf8a7ea5)
+    // Resolve user's jetton wallet address via TonCenter
+    const { getJettonBalances } = await import('./tonapi');
+    const { Address: TonAddress } = await import('@ton/core');
+    const jettons = await getJettonBalances(userWalletAddress);
+
+    // Normalize jettonAddress for comparison
+    const normalJetton = TonAddress.parse(jettonAddress).toString();
+    const found = jettons.find(j => j.address === normalJetton);
+    if (!found?.walletAddress) {
+      throw new Error('Jetton wallet not found. You may not hold this token.');
+    }
+
+    // Build TEP-74 jetton transfer to vault via user's jetton wallet
     const jettonTransferBody = beginCell()
       .storeUint(0xf8a7ea5, 32)                    // transfer op
       .storeUint(0, 64)                             // query_id
       .storeCoins(BigInt(amountRaw))                // jetton amount
-      .storeAddress(jettonVault.address)            // destination (vault)
+      .storeAddress(jettonVault.address)             // destination (vault)
       .storeAddress(Address.parse(userWalletAddress)) // response_destination
-      .storeMaybeRef(null)                          // custom_payload
-      .storeCoins(toNano('0.2'))                    // forward_ton_amount
-      .storeMaybeRef(swapPayload)                   // forward_payload
+      .storeBit(0)                                   // no custom_payload
+      .storeCoins(toNano('0.25'))                    // forward_ton_amount
+      .storeBit(1)                                   // forward_payload present
+      .storeRef(swapPayload)                         // forward_payload as ref
       .endCell();
 
-    // Need to send this to user's jetton wallet, not the vault directly
-    // The caller (SwapModal) needs to resolve the user's jetton wallet address
     return {
-      to: jettonVault.address.toString(), // placeholder - SwapModal needs user's jetton wallet
-      value: toNano('0.3'),
+      to: found.walletAddress,           // user's jetton wallet (NOT the vault)
+      value: toNano('0.3'),              // gas for the whole flow
       body: jettonTransferBody,
-      isJettonTransfer: true,
-      jettonVaultAddress: jettonVault.address.toString(),
     };
   });
 }
+
