@@ -9,11 +9,11 @@ export default function SwapModal({
 }) {
   const [amount, setAmount] = useState('');
   const [slippage, setSlippage] = useState('1');
-  const [dex, setDex] = useState('stonfi');
+  const [dex, setDex] = useState(selectedToken?.dex || 'stonfi');
   const [executing, setExecuting] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const [dedustPool, setDedustPool] = useState('');
+  const [dedustPool, setDedustPool] = useState(selectedToken?.poolAddress || '');
 
   const isBuy = action === 'buy';
 

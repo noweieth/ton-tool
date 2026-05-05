@@ -83,15 +83,53 @@ export default function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-section-title">Token</div>
         {selectedToken ? (
-          <div className="token-info">
-            <span className="symbol">{selectedToken.symbol}</span>
-            <span className="addr">{selectedToken.address?.slice(0, 12)}...</span>
-            <button
-              className="btn btn-sm"
-              onClick={() => onTokenChange(null)}
-              style={{ marginLeft: 'auto' }}
-            ><i className="fa-solid fa-xmark" /></button>
-          </div>
+          <>
+            <div className="token-info">
+              <span className="symbol">{selectedToken.symbol}</span>
+              <span className="addr">{selectedToken.address?.slice(0, 12)}...</span>
+              <button
+                className="btn btn-sm"
+                onClick={() => onTokenChange(null)}
+                style={{ marginLeft: 'auto' }}
+              ><i className="fa-solid fa-xmark" /></button>
+            </div>
+
+            {/* DEX Protocol */}
+            <div style={{ marginTop: 8 }}>
+              <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                <i className="fa-solid fa-shuffle" style={{ marginRight: 4 }} /> Default DEX
+              </label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  className={`btn btn-sm ${(selectedToken.dex || 'stonfi') === 'stonfi' ? 'btn-primary' : ''}`}
+                  onClick={() => onTokenChange({ ...selectedToken, dex: 'stonfi' })}
+                  style={{ flex: 1, fontSize: 11 }}
+                >STON.fi</button>
+                <button
+                  className={`btn btn-sm ${selectedToken.dex === 'dedust' ? 'btn-primary' : ''}`}
+                  onClick={() => onTokenChange({ ...selectedToken, dex: 'dedust' })}
+                  style={{ flex: 1, fontSize: 11 }}
+                >DeDust</button>
+              </div>
+            </div>
+
+            {/* Pool Address (DeDust) */}
+            {selectedToken.dex === 'dedust' && (
+              <div style={{ marginTop: 6 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                  <i className="fa-solid fa-link" style={{ marginRight: 4 }} /> Pool Address
+                  <span style={{ fontSize: 9, opacity: 0.6 }}> (optional)</span>
+                </label>
+                <input
+                  className="input input-mono"
+                  placeholder="EQ... (auto if empty)"
+                  value={selectedToken.poolAddress || ''}
+                  onChange={(e) => onTokenChange({ ...selectedToken, poolAddress: e.target.value })}
+                  style={{ fontSize: 10 }}
+                />
+              </div>
+            )}
+          </>
         ) : (
           <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>[no token selected]</span>
         )}
