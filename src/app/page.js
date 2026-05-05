@@ -11,6 +11,7 @@ import LogPanel from '@/components/LogPanel/LogPanel';
 import CreateWalletModal from '@/components/Modals/CreateWalletModal';
 import ImportWalletModal from '@/components/Modals/ImportWalletModal';
 import SwapModal from '@/components/Modals/SwapModal';
+import TransferModal from '@/components/Modals/TransferModal';
 import { getWallets } from '@/utils/storage';
 import { getBatchBalances, getBatchJettonBalance } from '@/services/tonapi';
 import { getSelectedToken, setSelectedToken, getLogs, addLog } from '@/utils/storage';
@@ -23,6 +24,7 @@ export default function Home() {
   const [logs, setLogsState] = useState([]);
   const [modal, setModal] = useState(null);
   const [swapTarget, setSwapTarget] = useState(null);
+  const [transferTarget, setTransferTarget] = useState(null);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,6 +81,11 @@ export default function Home() {
     setModal('swap');
   }, []);
 
+  const handleTransfer = useCallback((walletIndex) => {
+    setTransferTarget({ walletIndex });
+    setModal('transfer');
+  }, []);
+
   // Filter wallets
   const filteredWallets = wallets.filter(w => {
     if (!searchQuery) return true;
@@ -120,6 +127,7 @@ export default function Home() {
           selectedToken={selectedToken}
           viewMode={viewMode}
           onSwap={handleSwap}
+          onTransfer={handleTransfer}
           onWalletsChanged={handleWalletsChanged}
           pushLog={pushLog}
         />
@@ -149,6 +157,18 @@ export default function Home() {
           balance={balances[wallets[swapTarget.walletIndex]?.address] || '0'}
           tokenBalance={tokenBalances[wallets[swapTarget.walletIndex]?.address] || { balance: '0', decimals: 9 }}
           onClose={() => { setModal(null); setSwapTarget(null); }}
+          pushLog={pushLog}
+          onComplete={refreshBalances}
+        />
+      )}
+      {modal === 'transfer' && transferTarget && (
+        <TransferModal
+          wallet={wallets[transferTarget.walletIndex]}
+          walletIndex={transferTarget.walletIndex}
+          selectedToken={selectedToken}
+          balance={balances[wallets[transferTarget.walletIndex]?.address] || '0'}
+          tokenBalance={tokenBalances[wallets[transferTarget.walletIndex]?.address] || { balance: '0', decimals: 9 }}
+          onClose={() => { setModal(null); setTransferTarget(null); }}
           pushLog={pushLog}
           onComplete={refreshBalances}
         />

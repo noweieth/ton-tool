@@ -46,7 +46,7 @@ export async function getJettonBalances(address) {
     decimals: 9,
     image: '',
     balance: w.balance || '0',
-    walletAddress: w.address || '',
+    walletAddress: normalizeAddress(w.address || ''),
   }));
 }
 

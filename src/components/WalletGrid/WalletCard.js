@@ -6,7 +6,7 @@ import { removeWallet, renameWallet } from '@/services/walletManager';
 
 export default function WalletCard({
   wallet, index, balance, tokenBalance, selectedToken,
-  onSwap, onWalletsChanged, pushLog,
+  onSwap, onTransfer, onWalletsChanged, pushLog,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -123,6 +123,7 @@ export default function WalletCard({
       <div className="wallet-card-actions">
         <button className="btn btn-buy" onClick={() => onSwap(index, 'buy')}>Buy</button>
         <button className="btn btn-sell" onClick={() => onSwap(index, 'sell')}>Sell</button>
+        <button className="btn" onClick={() => onTransfer(index)} title="Transfer"><i className="fa-solid fa-paper-plane" /></button>
         <button className="btn" onClick={handleCopyAddress} title="Copy address"><i className="fa-regular fa-copy" /></button>
         <button className="btn" onClick={handleCopyPrivateKey} title="Copy private key"><i className="fa-solid fa-key" /></button>
         <button className="btn" onClick={() => {
