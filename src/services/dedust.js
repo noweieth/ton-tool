@@ -1,22 +1,6 @@
-import { TonClient4 } from '@ton/ton';
 import { Address, toNano, beginCell } from '@ton/core';
 import { Factory, MAINNET_FACTORY_ADDR, Asset, PoolType } from '@dedust/sdk';
-import { withRetry } from './tonClient';
-
-let client4Instance = null;
-async function getClient4() {
-  if (!client4Instance) {
-    try {
-      const { getHttpV4Endpoint } = await import('@orbs-network/ton-access');
-      const endpoint = await getHttpV4Endpoint();
-      client4Instance = new TonClient4({ endpoint });
-    } catch {
-      // Fallback to tonhub
-      client4Instance = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' });
-    }
-  }
-  return client4Instance;
-}
+import { getTonClient, withRetry } from './tonClient';
 
 // VaultNative swap opcode
 const SWAP_OP = 0xea06185d;
@@ -54,7 +38,7 @@ async function findPool(factory, client, TON, JETTON) {
  */
 export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
   return withRetry(async () => {
-    const client = await getClient4();
+    const client = getTonClient();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
 
     const TON = Asset.native();
@@ -101,7 +85,7 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
  */
 export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalletAddress }) {
   return withRetry(async () => {
-    const client = await getClient4();
+    const client = getTonClient();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
 
     const TON = Asset.native();
