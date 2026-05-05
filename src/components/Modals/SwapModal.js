@@ -163,6 +163,42 @@ export default function SwapModal({
                 <label className="form-label">
                   Amount ({isBuy ? 'TON' : selectedToken.symbol})
                 </label>
+
+                {/* % Balance Selector (sell only) */}
+                {!isBuy && (
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+                    {[25, 50, 75, 100].map(pct => {
+                      const dec = selectedToken?.decimals || 9;
+                      const maxToken = Number(tokenBalance?.balance || 0) / Math.pow(10, dec);
+                      const val = (maxToken * pct / 100).toFixed(4);
+                      return (
+                        <button
+                          key={pct}
+                          className={`btn ${amount === val ? 'btn-primary' : ''}`}
+                          onClick={() => setAmount(val)}
+                          style={{ flex: 1, minWidth: 50, fontSize: 11, padding: '4px 6px' }}
+                        >{pct}%</button>
+                      );
+                    })}
+                    <div style={{ position: 'relative', flex: 1, minWidth: 70 }}>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="%"
+                        style={{ fontSize: 11, padding: '4px 6px', width: '100%', textAlign: 'center' }}
+                        onChange={(e) => {
+                          const pct = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+                          const dec = selectedToken?.decimals || 9;
+                          const maxToken = Number(tokenBalance?.balance || 0) / Math.pow(10, dec);
+                          setAmount((maxToken * pct / 100).toFixed(4));
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="form-row">
                   <input
                     className="input input-mono"
