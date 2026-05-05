@@ -13,6 +13,7 @@ export default function SwapModal({
   const [executing, setExecuting] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [dedustPool, setDedustPool] = useState('');
 
   const isBuy = action === 'buy';
 
@@ -79,6 +80,7 @@ export default function SwapModal({
             jettonAddress: selectedToken.address,
             amountNano,
             userWalletAddress: wallet.address,
+            poolAddress: dedustPool.trim() || undefined,
           });
         } else {
           const dec = selectedToken.decimals || 9;
@@ -87,6 +89,7 @@ export default function SwapModal({
             jettonAddress: selectedToken.address,
             amountRaw,
             userWalletAddress: wallet.address,
+            poolAddress: dedustPool.trim() || undefined,
           });
         }
       }
@@ -147,6 +150,22 @@ export default function SwapModal({
                   >DeDust</button>
                 </div>
               </div>
+
+              {/* DeDust Pool Address (optional) */}
+              {dex === 'dedust' && (
+                <div className="form-group">
+                  <label className="form-label">
+                    Pool Address <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>(optional — paste if auto-discovery fails)</span>
+                  </label>
+                  <input
+                    className="input input-mono"
+                    placeholder="EQ... or UQ... (leave empty for auto)"
+                    value={dedustPool}
+                    onChange={(e) => setDedustPool(e.target.value)}
+                    style={{ fontSize: 11 }}
+                  />
+                </div>
+              )}
 
               {/* Balance Info */}
               <div className="form-group">

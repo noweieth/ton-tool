@@ -35,8 +35,9 @@ async function findPool(factory, client, TON, JETTON) {
 
 /**
  * Build swap TON → Jetton via DeDust
+ * If poolAddress is provided, skip auto-discovery and use it directly
  */
-export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
+export async function buildSwapTonToJetton({ jettonAddress, amountNano, poolAddress }) {
   return withRetry(async () => {
     const client = getTonClient();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
@@ -44,7 +45,13 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
     const TON = Asset.native();
     const JETTON = Asset.jetton(Address.parse(jettonAddress));
 
-    const pool = await findPool(factory, client, TON, JETTON);
+    let pool;
+    if (poolAddress) {
+      const { Pool } = await import('@dedust/sdk');
+      pool = client.open(Pool.createFromAddress(Address.parse(poolAddress)));
+    } else {
+      pool = await findPool(factory, client, TON, JETTON);
+    }
 
     const tonVault = client.open(await factory.getNativeVault());
 
@@ -83,7 +90,7 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
  * Flow: User sends jetton transfer to their own jetton wallet,
  * with destination=jettonVault and forward_payload=swap params
  */
-export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalletAddress }) {
+export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalletAddress, poolAddress }) {
   return withRetry(async () => {
     const client = getTonClient();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
@@ -91,7 +98,13 @@ export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalle
     const TON = Asset.native();
     const JETTON = Asset.jetton(Address.parse(jettonAddress));
 
-    const pool = await findPool(factory, client, TON, JETTON);
+    let pool;
+    if (poolAddress) {
+      const { Pool } = await import('@dedust/sdk');
+      pool = client.open(Pool.createFromAddress(Address.parse(poolAddress)));
+    } else {
+      pool = await findPool(factory, client, TON, JETTON);
+    }
 
     const jettonVault = client.open(await factory.getJettonVault(Address.parse(jettonAddress)));
 
