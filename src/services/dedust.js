@@ -27,6 +27,20 @@ function buildSwapParamsRef() {
 }
 
 /**
+ * Try to find pool: VOLATILE first, then STABLE
+ */
+async function findPool(factory, client, TON, JETTON) {
+  for (const type of [PoolType.VOLATILE, PoolType.STABLE]) {
+    try {
+      const pool = client.open(await factory.getPool(type, [TON, JETTON]));
+      const status = await pool.getReadinessStatus();
+      if (status === 'ready') return pool;
+    } catch {}
+  }
+  throw new Error('DeDust pool not found or not ready. If just created, wait ~30s for on-chain sync.');
+}
+
+/**
  * Build swap TON → Jetton via DeDust
  */
 export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
@@ -37,13 +51,9 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
     const TON = Asset.native();
     const JETTON = Asset.jetton(Address.parse(jettonAddress));
 
-    const pool = client.open(await factory.getPool(PoolType.VOLATILE, [TON, JETTON]));
-    const poolStatus = await pool.getReadinessStatus();
-    if (poolStatus !== 'ready') throw new Error('DeDust pool not ready');
+    const pool = await findPool(factory, client, TON, JETTON);
 
     const tonVault = client.open(await factory.getNativeVault());
-    const vaultStatus = await tonVault.getReadinessStatus();
-    if (vaultStatus !== 'ready') throw new Error('DeDust vault not ready');
 
     const amount = BigInt(amountNano);
 
@@ -88,9 +98,7 @@ export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalle
     const TON = Asset.native();
     const JETTON = Asset.jetton(Address.parse(jettonAddress));
 
-    const pool = client.open(await factory.getPool(PoolType.VOLATILE, [TON, JETTON]));
-    const poolStatus = await pool.getReadinessStatus();
-    if (poolStatus !== 'ready') throw new Error('DeDust pool not ready');
+    const pool = await findPool(factory, client, TON, JETTON);
 
     const jettonVault = client.open(await factory.getJettonVault(Address.parse(jettonAddress)));
 
