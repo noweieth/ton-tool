@@ -224,6 +224,17 @@ export default function SwapModal({
                       onClick={() => setSlippage(s)}
                     >{s}%</button>
                   ))}
+                  <input
+                    className="input"
+                    type="number"
+                    min="0.1"
+                    max="100"
+                    step="0.1"
+                    placeholder="Custom"
+                    style={{ width: 72, textAlign: 'center', fontSize: 12 }}
+                    value={!['0.5', '1', '3', '5', '10'].includes(slippage) ? slippage : ''}
+                    onChange={(e) => setSlippage(e.target.value || '1')}
+                  />
                 </div>
               </div>
 
