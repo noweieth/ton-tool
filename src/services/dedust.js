@@ -3,12 +3,17 @@ import { Address, toNano, beginCell } from '@ton/core';
 import { Factory, MAINNET_FACTORY_ADDR, Asset, PoolType } from '@dedust/sdk';
 import { withRetry } from './tonClient';
 
-const TONHUB_ENDPOINT = 'https://mainnet-v4.tonhubapi.com';
-
 let client4Instance = null;
-function getClient4() {
+async function getClient4() {
   if (!client4Instance) {
-    client4Instance = new TonClient4({ endpoint: TONHUB_ENDPOINT });
+    try {
+      const { getHttpV4Endpoint } = await import('@orbs-network/ton-access');
+      const endpoint = await getHttpV4Endpoint();
+      client4Instance = new TonClient4({ endpoint });
+    } catch {
+      // Fallback to tonhub
+      client4Instance = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' });
+    }
   }
   return client4Instance;
 }
@@ -30,14 +35,18 @@ function buildSwapParamsRef() {
  * Try to find pool: VOLATILE first, then STABLE
  */
 async function findPool(factory, client, TON, JETTON) {
+  const errors = [];
   for (const type of [PoolType.VOLATILE, PoolType.STABLE]) {
     try {
       const pool = client.open(await factory.getPool(type, [TON, JETTON]));
       const status = await pool.getReadinessStatus();
       if (status === 'ready') return pool;
-    } catch {}
+      errors.push(`${type === PoolType.VOLATILE ? 'VOLATILE' : 'STABLE'}: ${status}`);
+    } catch (e) {
+      errors.push(`${type === PoolType.VOLATILE ? 'VOLATILE' : 'STABLE'}: ${e.message}`);
+    }
   }
-  throw new Error('DeDust pool not found or not ready. If just created, wait ~30s for on-chain sync.');
+  throw new Error(`DeDust pool not ready (${errors.join(', ')}). Ensure LP is added and try again.`);
 }
 
 /**
@@ -45,7 +54,7 @@ async function findPool(factory, client, TON, JETTON) {
  */
 export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
   return withRetry(async () => {
-    const client = getClient4();
+    const client = await getClient4();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
 
     const TON = Asset.native();
@@ -92,7 +101,7 @@ export async function buildSwapTonToJetton({ jettonAddress, amountNano }) {
  */
 export async function buildSwapJettonToTon({ jettonAddress, amountRaw, userWalletAddress }) {
   return withRetry(async () => {
-    const client = getClient4();
+    const client = await getClient4();
     const factory = client.open(Factory.createFromAddress(MAINNET_FACTORY_ADDR));
 
     const TON = Asset.native();
